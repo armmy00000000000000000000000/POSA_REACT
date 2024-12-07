@@ -37,7 +37,7 @@ function CashPage() {
         setLoadingbtn(true);
         const summaryToPrint = { ...ticketSummary };
 
-     
+
         // ตั้งสถานะเป็นกำลังพิมพ์
         setIsPrinting(true);
         summaryToPrint.group = isGroupPrint ? 2 : 1;
