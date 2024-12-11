@@ -102,8 +102,7 @@ function DetailOrder() {
     const Printder = (id, role) => {
         const newAttempt = printAttempts + 1;
         const printUrl = `http://localhost/pos_client_print/${role}.php?id=${id}&r=${newAttempt}&ep=${PRINTER_ENDPOINT}`;
-
-        Reprint(id);
+        Reprint("reprint order: " + id, id);
         window.open(printUrl, '_blank', 'width=600,height=400');
 
 
@@ -117,7 +116,8 @@ function DetailOrder() {
         const newAttempt = printAttempts + 1;
         const printUrl = `http://localhost/pos_client_print/${role}.php?id=${id}&tid=${tid}&r=${newAttempt}&ep=${PRINTER_ENDPOINT}`;
 
-        Reprint(id);
+        Reprint("reprint ticket: " + tid + " (order_id: " + id + ")", id);
+
         window.open(printUrl, '_blank', 'width=600,height=400');
 
 
@@ -127,12 +127,12 @@ function DetailOrder() {
         alert(`ข้อมูลส่งเรียบร้อยแล้ว กรุณารอ หรือกดปุ่ม ลองอีกครั้ง. จำนวนพิมพ์ซ้ำ (${newAttempt})`);
     };
 
-    const Reprint = (id_ticket) => {
+    const Reprint = (mge,id_ticket) => {
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
         const raw = JSON.stringify({
-            "message": "reprint id" + id_ticket,
+            "message": mge,
             "id": id_ticket,
             "user_id": user_id
         });

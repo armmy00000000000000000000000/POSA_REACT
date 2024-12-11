@@ -16,7 +16,7 @@ function Home() {
   const machineZooId = localStorage.getItem('machine_zoo_id');
   const selectedZoo = imgzoos.find(zoo => zoo.id === parseInt(machineZooId));
 
-  const isOpen = useState(true);
+  const [isOpen, setIsOpen] = useState(true);
 
   const handleClick = () => {
     const empCode = localStorage.getItem('emp_code');
@@ -29,9 +29,10 @@ function Home() {
       <div className="d-flex flex-column flex-md-row">
         <div className="container mt-4 flex-grow-1">
           <div className="row">
+            {/* Sidebar */}
             <div className="col-md-3">
               {isOpen && (
-                <div className="accordion shadow-sm" id="accordionExample">
+                <div className="accordion shadow rounded" id="accordionExample">
                   <div className="accordion-item">
                     <h2 className="accordion-header" id="headingOne">
                       <button
@@ -51,7 +52,7 @@ function Home() {
                       aria-labelledby="headingOne"
                       data-bs-parent="#accordionExample"
                     >
-                      <div className="accordion-body bg-light">
+                      <div className="accordion-body bg-white shadow-sm">
                         <ul className="list-group">
                           <li className="list-group-item">
                             <Link to="/home" className="text-decoration-none">หน้าแรก</Link>
@@ -79,10 +80,11 @@ function Home() {
               )}
             </div>
 
+            {/* Main Content */}
             <div className="col-md-9">
-              <div className="card shadow-sm">
+              <div className="card shadow-lg rounded">
                 <div className="card-body">
-                  <h5 className="card-title text-primary">ข้อมูลผู้ใช้งาน</h5>
+                  <h5 className="card-title text-primary fw-bold">ข้อมูลผู้ใช้งาน</h5>
                   <p><strong>ชื่อผู้ใช้งาน:</strong> {localStorage.getItem('name')}</p>
                   <p><strong>ตำแหน่ง:</strong> {localStorage.getItem('user_role')}</p>
                   <p><strong>ชื่อเครื่อง:</strong> {localStorage.getItem('pc_name') || ''}</p>
@@ -93,7 +95,7 @@ function Home() {
               </div>
 
               <div className="mt-4">
-                <div className="alert alert-info">
+                <div className="alert alert-info shadow-sm rounded">
                   <strong>ประกาศ:</strong> กรุณาตรวจสอบข้อมูลของคุณให้ถูกต้อง
                 </div>
               </div>
