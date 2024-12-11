@@ -47,6 +47,7 @@ function DetailOrder() {
     const [error, setError] = useState(null);
     const userRole = localStorage.getItem('user_role');
     const user = localStorage.getItem('user');
+    const user_id = localStorage.getItem('id');
     const machine = localStorage.getItem('machine');
     const handleLogout = () => {
         localStorage.clear();
@@ -102,7 +103,7 @@ function DetailOrder() {
         const newAttempt = printAttempts + 1;
         const printUrl = `http://localhost/pos_client_print/${role}.php?id=${id}&r=${newAttempt}&ep=${PRINTER_ENDPOINT}`;
 
-
+        Reprint(id);
         window.open(printUrl, '_blank', 'width=600,height=400');
 
 
@@ -116,7 +117,7 @@ function DetailOrder() {
         const newAttempt = printAttempts + 1;
         const printUrl = `http://localhost/pos_client_print/${role}.php?id=${id}&tid=${tid}&r=${newAttempt}&ep=${PRINTER_ENDPOINT}`;
 
-
+        Reprint(id);
         window.open(printUrl, '_blank', 'width=600,height=400');
 
 
@@ -125,6 +126,29 @@ function DetailOrder() {
 
         alert(`ข้อมูลส่งเรียบร้อยแล้ว กรุณารอ หรือกดปุ่ม ลองอีกครั้ง. จำนวนพิมพ์ซ้ำ (${newAttempt})`);
     };
+
+    const Reprint = (id_ticket) => {
+        const myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+
+        const raw = JSON.stringify({
+            "message": "reprint id" + id_ticket,
+            "id": id_ticket,
+            "user_id": user_id
+        });
+
+        const requestOptions = {
+            method: "POST",
+            headers: myHeaders,
+            body: raw,
+            redirect: "follow"
+        };
+
+        fetch(API_ENDPOINT + "/api/v1/zoo/public/logs/reprint", requestOptions)
+            .then((response) => response.text())
+            .then((result) => console.log(result))
+            .catch((error) => console.error(error));
+    }
 
 
     if (loading) {
