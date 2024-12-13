@@ -2,7 +2,7 @@
   "name": "pos",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://zooe-ticket.com/posa",
+  "homepage": "https://addpay.net/posa",
   "dependencies": {
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",

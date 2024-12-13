@@ -34,6 +34,8 @@ function QRCodePage() {
     const [IDprint, setIDprint] = useState('');
     const [ID, setID] = useState('');
     const navigate = useNavigate();
+    const parsedUser = JSON.parse(user); // แปลง JSON เป็น Object
+    const empCode = parsedUser.user_profile.emp_code; // ดึง emp_code
     let timer;
     useEffect(() => {
         let timer;
@@ -155,7 +157,8 @@ function QRCodePage() {
 
         const raw = JSON.stringify({
             "ref1": ref1,
-            "ref2": ref2
+            "ref2": ref2,
+            "emp_code": empCode
         });
 
         const requestOptions = {
@@ -176,7 +179,7 @@ function QRCodePage() {
 
 
                 } else if (result.respMsg === "Success") {
-                    scan_success()
+                    // scan_success()
                     // clearInterval(timer);
                     const printUrl = idprint === 2
                         ? `http://localhost/pos_client_print/print_group.php?id=${id_order}&r=0&ep=${PRINTER_ENDPOINT}`
@@ -277,6 +280,7 @@ function QRCodePage() {
 
 
     const scan_success = () => {
+        console.log(odderid)
         const myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
         myHeaders.append("X-API-KEY", token);
@@ -450,10 +454,11 @@ function QRCodePage() {
         });
     };
 
-
+  
 
     return (
         <div className="container mt-4 py-2">
+
             <div className="row">
                 {/* Ticket Information Section */}
                 <div className="col-md-6 mb-4">
