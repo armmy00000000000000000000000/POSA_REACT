@@ -6,21 +6,24 @@ import CashPage from './components/pos_ticket/CashPage';
 import Orderreport from './components/report/order_report';
 import DetailOrder from './components/report/detail_order';
 import Ticketsalesreport from './components/report/ticket_sales_report';
+import 'bootstrap/dist/css/bootstrap.min.css'
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 import './App.css';
+// import './index.css';
 import { Routes, Route } from 'react-router-dom';
 function App() {
-  const date = new Date(); // วันที่ปัจจุบัน
-  const timezone = 'Asia/Bangkok'; // ปรับ timezone ตามที่ต้องการ
+  // const date = new Date(); // วันที่ปัจจุบัน
+  // const timezone = 'Asia/Bangkok'; // ปรับ timezone ตามที่ต้องการ
 
-  const formattedDate = new Intl.DateTimeFormat('th-TH', {
-    timeZone: timezone,
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit'
-  }).format(date);
+  // const formattedDate = new Intl.DateTimeFormat('th-TH', {
+  //   timeZone: timezone,
+  //   year: 'numeric',
+  //   month: 'long',
+  //   day: 'numeric',
+  //   hour: '2-digit',
+  //   minute: '2-digit',
+  //   second: '2-digit'
+  // }).format(date);
   const token = localStorage.getItem('token');
   if (!token) {
     return (

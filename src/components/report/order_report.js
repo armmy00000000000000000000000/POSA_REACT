@@ -20,7 +20,7 @@ function Order_report() {
     const navigate = useNavigate();
     const handleLogout = () => {
         localStorage.clear();
-        window.location.href = '/posa/login';
+        window.location.href = '/pose/login';
     };
     useEffect(() => {
         getOrder(selectedZooId);
@@ -42,7 +42,7 @@ function Order_report() {
         myHeaders.append("X-API-KEY", token);
 
         const raw = JSON.stringify({
-            zoo_id: zoo || selectedZooId , // ใช้ selectedZooId ถ้ามี ไม่งั้นใช้ user_zoo_id
+            zoo_id: zoo || selectedZooId, // ใช้ selectedZooId ถ้ามี ไม่งั้นใช้ user_zoo_id
             user,
             machine
         });
@@ -55,23 +55,23 @@ function Order_report() {
         };
 
         fetch(`${API_ENDPOINT}/api/v1/zoo/pos/order_report`, requestOptions)
-        .then(response => {
-            if (response.status === 401) {
-                // แจ้งเตือนให้ผู้ใช้ล็อกเอาท์เมื่อได้รับสถานะ 401
-                Swal.fire({
-                    title: 'Token หมดอายุ',
-                    text: 'กรุณาเข้าสู่ระบบใหม่',
-                    icon: 'warning',
-                    confirmButtonText: 'ล็อกเอาท์',
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        handleLogout();
-                    }
-                });
-                throw new Error('Unauthorized');
-            }
-            return response.json();
-        })
+            .then(response => {
+                if (response.status === 401) {
+                    // แจ้งเตือนให้ผู้ใช้ล็อกเอาท์เมื่อได้รับสถานะ 401
+                    Swal.fire({
+                        title: 'Token หมดอายุ',
+                        text: 'กรุณาเข้าสู่ระบบใหม่',
+                        icon: 'warning',
+                        confirmButtonText: 'ล็อกเอาท์',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            handleLogout();
+                        }
+                    });
+                    throw new Error('Unauthorized');
+                }
+                return response.json();
+            })
             .then((result) => {
                 setOrders(result.orders || []);
                 setZooname(result.zoos || []);
@@ -94,25 +94,29 @@ function Order_report() {
 
     const offset = currentPage * ordersPerPage;
     const currentOrders = orders
-   
+
         .slice(offset, offset + ordersPerPage);
 
     console.log("Current Orders:", currentOrders);
 
+
+
+
     return (
         <div>
             <Navbar />
-            <div className='container mt-3'>
-                <div className="card">
-                    <div className="card-header">รายงานคำสั่งซื้อ ( { localStorage.getItem('zooname') || ''} )</div>
-
+            <div className="mt-4">
+                <div className="card shadow-lg rounded-4 border-0">
+                    <div className="card-header bg-primary text-white fw-bold fs-5">
+                        รายงานคำสั่งซื้อ ({localStorage.getItem('zooname') || ''})
+                    </div>
                     <div className="card-body">
                         {user_role === 'admin' && (
-                            <>
-                                <label htmlFor="zoo-select">เลือกสวนสัตว์:</label>
-                                <select 
-                                    id="zoo-select" 
-                                    className="form-select mb-3" 
+                            <div className="mb-4">
+                                <label htmlFor="zoo-select" className="form-label fw-semibold">เลือกสวนสัตว์:</label>
+                                <select
+                                    id="zoo-select"
+                                    className="form-select shadow-sm rounded-3"
                                     onChange={handleZooChange}
                                 >
                                     <option value="">ทั้งหมด</option>
@@ -120,64 +124,167 @@ function Order_report() {
                                         <option key={zoo.id} value={zoo.id}>สวนสัตว์ {zoo.name}</option>
                                     ))}
                                 </select>
-                            </>
+                            </div>
                         )}
-                        <table className="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th scope="col">id</th>
-                                    <th scope="col">ref1</th>
-                                    {/* <th scope="col">ref2</th> */}
-                                    <th scope="col">ประเภท</th>
-                                    <th scope="col">สถานะ</th>
-                                    <th scope="col">วันที่ทำรายการ</th>
-                                    <th scope="col">ราคาสุทธิ</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentOrders.length > 0 ? (
-                                    currentOrders.map((order, index) => (
-                                        <tr key={index} onClick={() => handleRowClick(order)} style={{ cursor: 'pointer' }}>
-                                            <th scope="row">{order.id}</th>
-                                            <td>{order.ref1}</td>
-                                            {/* <td>{order.ref2}</td> */}
-                                            <td>{order.payment_method}</td>
-                                            <td>{order.status}</td>
-                                            <td>{order.create_time}</td>
-                                            <td>{order.amount}</td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="7" className="text-center">ไม่มีข้อมูล</td>
+
+                        <div className="table-responsive">
+                            <table className="table table-hover table-bordered align-middle rounded-3 overflow-hidden">
+                                <thead className="table-light text-center">
+                                    <tr className="align-middle">
+                                        <th scope="col">#</th>
+                                        <th scope="col">Ref1</th>
+                                        <th scope="col">ประเภท</th>
+                                        <th scope="col">สถานะ</th>
+                                        <th scope="col">วันที่ทำรายการ</th>
+                                        <th scope="col">ราคาสุทธิ</th>
                                     </tr>
-                                )}
-                            </tbody>
-                        </table>
-                        <ReactPaginate
-                            previousLabel={"ก่อนหน้า"}
-                            nextLabel={"ถัดไป"}
-                            breakLabel={"..."}
-                            pageCount={pageCount}
-                            marginPagesDisplayed={2}
-                            pageRangeDisplayed={5}
-                            onPageChange={handlePageClick}
-                            containerClassName={"pagination"}
-                            pageClassName={"page-item"}
-                            pageLinkClassName={"page-link"}
-                            previousClassName={"page-item"}
-                            previousLinkClassName={"page-link"}
-                            nextClassName={"page-item"}
-                            nextLinkClassName={"page-link"}
-                            breakClassName={"page-item"}
-                            breakLinkClassName={"page-link"}
-                            activeClassName={"active"}
-                        />
+                                </thead>
+                                <tbody>
+                                    {currentOrders.length > 0 ? (
+                                        currentOrders.map((order, index) => (
+                                            <tr
+                                                key={index}
+                                                onClick={() => handleRowClick(order)}
+                                                style={{ cursor: 'pointer' }}
+                                            >
+                                                <th scope="row" className="text-center">{order.id}</th>
+                                                <td>{order.ref1}</td>
+                                                <td>{order.payment_method}</td>
+                                                <td>
+                                                    <span
+                                                        className={`badge px-3 py-2 rounded-pill 
+      ${order.status.toLowerCase() === 'cancel'
+                                                                ? 'bg-danger'
+                                                                : order.status.toLowerCase() === 'approved'
+                                                                    ? 'bg-success'
+                                                                    : 'bg-secondary'
+                                                            }`}
+                                                    >
+                                                        {order.status}
+                                                    </span>
+                                                </td>
+
+                                                <td>{order.create_time}</td>
+                                                <td className="text-end">{parseFloat(order.amount).toLocaleString()} ฿</td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="6" className="text-center text-muted">ไม่มีข้อมูล</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="d-flex justify-content-center mt-4">
+                            <ReactPaginate
+                                previousLabel={"«"}
+                                nextLabel={"»"}
+                                breakLabel={"..."}
+                                pageCount={pageCount}
+                                marginPagesDisplayed={2}
+                                pageRangeDisplayed={5}
+                                onPageChange={handlePageClick}
+                                containerClassName={"pagination pagination-lg"}
+                                pageClassName={"page-item"}
+                                pageLinkClassName={"page-link"}
+                                previousClassName={"page-item"}
+                                previousLinkClassName={"page-link"}
+                                nextClassName={"page-item"}
+                                nextLinkClassName={"page-link"}
+                                breakClassName={"page-item"}
+                                breakLinkClassName={"page-link"}
+                                activeClassName={"active"}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     );
+
+
+    // ui เดิม
+    // return (
+    //     <div>
+    //         <Navbar />
+    //         <div className='container mt-3'>
+    //             <div className="card">
+    //                 <div className="card-header">รายงานคำสั่งซื้อ ( { localStorage.getItem('zooname') || ''} )</div>
+
+    //                 <div className="card-body">
+    //                     {user_role === 'admin' && (
+    //                         <>
+    //                             <label htmlFor="zoo-select">เลือกสวนสัตว์:</label>
+    //                             <select 
+    //                                 id="zoo-select" 
+    //                                 className="form-select mb-3" 
+    //                                 onChange={handleZooChange}
+    //                             >
+    //                                 <option value="">ทั้งหมด</option>
+    //                                 {zooname.map((zoo) => (
+    //                                     <option key={zoo.id} value={zoo.id}>สวนสัตว์ {zoo.name}</option>
+    //                                 ))}
+    //                             </select>
+    //                         </>
+    //                     )}
+    //                     <table className="table table-hover">
+    //                         <thead>
+    //                             <tr>
+    //                                 <th scope="col">id</th>
+    //                                 <th scope="col">ref1</th>
+    //                                 {/* <th scope="col">ref2</th> */}
+    //                                 <th scope="col">ประเภท</th>
+    //                                 <th scope="col">สถานะ</th>
+    //                                 <th scope="col">วันที่ทำรายการ</th>
+    //                                 <th scope="col">ราคาสุทธิ</th>
+    //                             </tr>
+    //                         </thead>
+    //                         <tbody>
+    //                             {currentOrders.length > 0 ? (
+    //                                 currentOrders.map((order, index) => (
+    //                                     <tr key={index} onClick={() => handleRowClick(order)} style={{ cursor: 'pointer' }}>
+    //                                         <th scope="row">{order.id}</th>
+    //                                         <td>{order.ref1}</td>
+    //                                         {/* <td>{order.ref2}</td> */}
+    //                                         <td>{order.payment_method}</td>
+    //                                         <td>{order.status}</td>
+    //                                         <td>{order.create_time}</td>
+    //                                         <td>{order.amount}</td>
+    //                                     </tr>
+    //                                 ))
+    //                             ) : (
+    //                                 <tr>
+    //                                     <td colSpan="7" className="text-center">ไม่มีข้อมูล</td>
+    //                                 </tr>
+    //                             )}
+    //                         </tbody>
+    //                     </table>
+    //                     <ReactPaginate
+    //                         previousLabel={"ก่อนหน้า"}
+    //                         nextLabel={"ถัดไป"}
+    //                         breakLabel={"..."}
+    //                         pageCount={pageCount}
+    //                         marginPagesDisplayed={2}
+    //                         pageRangeDisplayed={5}
+    //                         onPageChange={handlePageClick}
+    //                         containerClassName={"pagination"}
+    //                         pageClassName={"page-item"}
+    //                         pageLinkClassName={"page-link"}
+    //                         previousClassName={"page-item"}
+    //                         previousLinkClassName={"page-link"}
+    //                         nextClassName={"page-item"}
+    //                         nextLinkClassName={"page-link"}
+    //                         breakClassName={"page-item"}
+    //                         breakLinkClassName={"page-link"}
+    //                         activeClassName={"active"}
+    //                     />
+    //                 </div>
+    //             </div>
+    //         </div>
+    //     </div>
+    // );
 }
 
 export default Order_report;

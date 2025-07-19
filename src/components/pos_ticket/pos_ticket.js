@@ -349,7 +349,7 @@ function PosTicket() {
                                                     handleTicketSelection(t);
                                                 }
                                             }}>
-                                                <b  style={{ color: 'black' }}>{t.name}</b>
+                                                <b style={{ color: 'black' }}>{t.name}</b>
                                                 <p className="card-text"></p>
                                                 <div class="text-end">
                                                     <b style={{ color: 'black' }}>{t.price}</b>

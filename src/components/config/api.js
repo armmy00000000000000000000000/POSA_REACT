@@ -34,6 +34,7 @@ export const loginUser = async (email, password, mac) => {
       localStorage.setItem('id', result.user.id);
       localStorage.setItem('name', result.user.user_profile.first_name);
       localStorage.setItem('user_zoo_id', result.user.user_profile.zoo_id);
+       localStorage.setItem('user_profilezoo_id', result.user.user_profile.zoo.id);
       localStorage.setItem('machine_id', result.user.machine_id);
       localStorage.setItem('machine_zoo_id', result.machine.zoo.id);
       localStorage.setItem('token', result.api_key); 
@@ -44,7 +45,7 @@ export const loginUser = async (email, password, mac) => {
       localStorage.setItem('user', JSON.stringify(result.user));
       localStorage.setItem('zooname', result.machine.zoo.name);
 
-      window.location = '/posa/home';
+      window.location = '/pose/home';
       return {
         status: response.status,
         message: 'ข้อมูลถูกต้อง', 
@@ -73,7 +74,7 @@ export const loginUser = async (email, password, mac) => {
 
 const handleLogout = () => {
   localStorage.clear();
-  window.location.href = '/posa/login';
+  window.location.href = '/pose/login';
 };
 
 export const Ticket = async (zooid,key,machine) => {

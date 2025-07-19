@@ -9,6 +9,7 @@ import { API_ENDPOINT, PRINTER_ENDPOINT } from '../config/config';
 const Ticket_sales_report = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [setid, setID] = useState(null);
     const token = localStorage.getItem('token');
     const [canPrint, setCanPrint] = useState(false); // State สำหรับแสดงปุ่มพิมพ์
     const [reportData, setReportData] = useState(null); // สถานะข้อมูลรายงาน
@@ -17,7 +18,7 @@ const Ticket_sales_report = () => {
     const machine = localStorage.getItem('machine') ? JSON.parse(localStorage.getItem('machine')) : {};
     const handleLogout = () => {
         localStorage.clear();
-        window.location.href = '/posa/login';
+        window.location.href = '/pose/login';
     };
     useEffect(() => {
         const myHeaders = new Headers();
@@ -88,210 +89,34 @@ const Ticket_sales_report = () => {
     const formattedDate = currentDate.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
     const formattedTime = currentDate.toLocaleTimeString('th-TH');
 
-    const Printder = (id) => {
-        const printUrl = `http://localhost/pos_client_print/printder.php?print_id=${id}&ep=${PRINTER_ENDPOINT}`;
-        window.open(printUrl, '_blank', 'width=600,height=400');
-    }
+    const Printder = (setid) => {
+        const requestOptions = {
+            method: "GET",
+            redirect: "follow"
+        };
+
+        fetch(`http://127.0.0.1:5000/report/${PRINTER_ENDPOINT}/${setid}`, requestOptions)
+            .then((response) => response.json())
+            .then((result) => {
+                console.log(result);
+                if (result.status === "printed") {
+                    console.log('id');
+                    setCanPrint(true); // แสดงปุ่มพิมพ์เมื่อสถานะเป็น success
+                    // setIdprint(result.printder.id);
+                } else {
+                    setCanPrint(false); // ซ่อนปุ่มพิมพ์เมื่อสถานะไม่เป็น success
+                }
+            })
+            .catch((error) => console.error(error));
+    };
+
 
     const Print_sum_date = () => {
         const myHeaders = new Headers();
+        myHeaders.append("Accept", "application/json");
         myHeaders.append("Content-Type", "application/json");
         myHeaders.append("X-API-KEY", token);
-
-
-        // ตรวจสอบว่ามีข้อมูลใน reportData หรือไม่
-        if (!reportData) {
-            console.error("reportData is not available");
-            return;
-        }
-
-        const formattedDate = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-        const formattedTime = new Date().toLocaleTimeString('th-TH');
-        const raw = JSON.stringify({
-            "html_content": `
-                <div class="receiptSumAll">
-                    <table width="100%">
-                        <tbody>
-                            <tr align="center">
-                                <td><b>รายงานยอดจำหน่ายบัตร</b></td>
-                            </tr>
-                            <tr align="center">
-                                <td>${reportData.machine.zoo.name || 'ไม่ระบุ'}</td>
-                            </tr>
-                            <tr align="center">
-                                <td>ประจำวันที่ ${formattedDate}</td>
-                            </tr>
-                            <tr align="center">
-                                <td>รหัสเครื่อง POS: ${reportData.machine.name || 'ไม่ระบุ'}-${reportData.machine.code || 'ไม่ระบุ'}${reportData.machine.number || 'ไม่ระบุ'}</td>
-                            </tr>
-                            <tr align="center">
-                                <td>ชื่อพนักงาน: ${reportData.user_profile.first_name} ${reportData.user_profile.last_name}</td>
-                            </tr>
-                            <tr align="center">
-                                <td>เวลาทำรายการ: ${formattedTime}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <b>--------------------------------------------------------------</b><br>
-        
-                    <table>
-                        <tbody>
-                            <tr>
-                                <td><b>ประเภทบัตร</b></td>
-                                <td align="right"><b>ยอดขาย</b></td>
-                            </tr>
-                        </tbody>
-                        <tbody>
-                            ${Object.keys(reportData.result).map((key) => {
-                                const item = reportData.result[key];
-                                const objType = item.obj_type;
-                                return `
-                                    <tr>
-                                        <td align="left">${objType ? objType.name : 'ไม่ระบุ'}</td>
-                                        <td align="right"><b>${(item.sum || 0).toLocaleString()}</b></td>
-                                    </tr>`;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                    <br> <b>--------------------------------------------------------------</b><br>
-        
-                    <table class="table">
-                        <tbody>
-                            <tr>
-                                <td><b>ประเภทรายรับ</b></td>
-                                <td align="right"><b>ยอดขาย</b></td>
-                            </tr>
-                        </tbody>
-                        <tbody>
-                            <tr><td align="left">รับเงินโอนผ่าน QR CODE</td><td align="right"><b>${(reportData.paymentMethodSum.qrcode || 0).toLocaleString()}</b></td></tr>
-                            <tr><td align="left">รับเงินสด</td><td align="right"><b>${(reportData.paymentMethodSum.cash - reportData.dealer || 0).toLocaleString()}</b></td></tr>
-                            <tr><td align="left">บัตรเครดิต</td><td align="right"><b>${(reportData.paymentMethodSum.credit_card || 0).toLocaleString()}</b></td></tr>
-                            <tr><td align="left">ขายเชื่อ</td><td align="right"><b>${(reportData.paymentMethodSum.credit || 0).toLocaleString()}</b></td></tr>
-                        </tbody>
-                    </table>
-                    <br> <b>--------------------------------------------------------------</b><br>
-        
-                    <table class="table">
-                        <tbody>
-                            <tr>
-                                <td><b>รวม</b></td>
-                                <td align="right"><b>ยอด</b></td>
-                            </tr>
-                        </tbody>
-                        <tbody>
-                            <tr>
-                                <td align="left">รวมเป็นเงิน</td>
-                                <td align="right"><b>${(reportData.totalAmount || 0).toLocaleString()}</b></td>
-                            </tr>
-                            <tr>
-                                <td align="left">รวมบัตร(ใบ)</td>
-                                <td align="right"><b>${reportData.totalTicketsCount || 0}</b></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <br> <b>--------------------------------------------------------------</b><br>
-        
-                    <b style="font-size:1.2em;">[ ]</b> ครบถ้วนถูกต้อง <br>
-                    <b style="font-size:1.2em;">[ ]</b> ไม่ถูกต้อง <br>
-                    <b>--------------------------------------------------------------</b><br>
-        
-                    <table>
-                        <tbody>
-                            <tr align="center">
-                                <td><br><b>----------------------------</b> <br><br>
-                                    ${reportData.manage_name || ''}<br>
-                                    (ผู้ตรวจสอบเงินสด)
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>`
-        });
-        
-//         const raw = JSON.stringify({
-//             "html_content": `
-//                 <div id="printable">
-//                     <div class='col-md-6 card text-center'>
-//                         <div class='container text-center'>
-//                             <h3>รายงานยอดจำหน่ายบัตร</h3>
-//                             <h3>${reportData.machine.zoo.name || 'ไม่ระบุ'}</h3>
-//                             <h3>ประจำวันที่ ${formattedDate}</h3>
-//                             <h3>รหัสเครื่อง POS: ${reportData.machine.name || 'ไม่ระบุ'}-${reportData.machine.code || 'ไม่ระบุ'}${reportData.machine.number || 'ไม่ระบุ'}</h3>
-//                             <h3>ชื่อพนักงาน: ${reportData.user_profile.first_name} ${reportData.user_profile.last_name}</h3>
-//                             <h3>เวลาทำรายการ: ${formattedTime}</h3>
-//                         </div>
-//                         <hr />
-//                         <h5>ประเภทบัตร</h5>
-//                         <table class="table">
-//                             <thead>
-//                                 <tr>
-//                                     <th>ประเภทบัตร</th>
-//                                     <th>ยอดขาย</th>
-//                                 </tr>
-//                             </thead>
-//                             <tbody>
-//                                 ${Object.keys(reportData.result).map((key) => {
-//                 const item = reportData.result[key];
-//                 const objType = item.obj_type;
-//                 return `
-//                                         <tr>
-//                                             <td>${objType ? objType.name : 'ไม่ระบุ'}</td>
-//                                             <td>${(item.sum || 0).toLocaleString()}</td>
-//                                         </tr>
-//                                     `;
-//             }).join('')}
-           
-//                             </tbody>
-//                         </table>
-//                         <hr />
-//                         <h5>ประเภทรายรับ</h5>
-//                         <table class="table">
-//                             <thead>
-//                                 <tr>
-//                                     <th>ประเภท</th>
-//                                     <th>ยอดขาย</th>
-//                                 </tr>
-//                             </thead>
-//                             <tbody>
-//                                 <tr><td>รับเงินโอนผ่าน QR CODE</td><td>${(reportData.paymentMethodSum.qrcode || 0).toLocaleString()}</td></tr>
-//                                 <tr><td>รับเงินสด</td><td>${(reportData.paymentMethodSum.cash - reportData.dealer || 0).toLocaleString()}</td></tr>
-//                                 <tr><td>บัตรเครดิต</td><td>${(reportData.paymentMethodSum.credit_card || 0).toLocaleString()}</td></tr>
-//                                 <tr><td>ขายเชื่อ</td><td>${(reportData.paymentMethodSum.credit || 0).toLocaleString()}</td></tr>
-//                             </tbody>
-//                         </table>
-//                         <hr />
-//                    <div className='table-responsive'>
-//     <table className='table'>
-//         <thead>
-//             <tr>
-//                 <th ><h5>รายละเอียด</h5></th>
-//                 <th ><h5>รวม</h5></th>
-//                 <th ><h5>ตรวจสอบ</h5></th>
-//             </tr>
-//         </thead>
-//         <tbody>
-//             <tr>
-//                 <td>รวมเป็นเงิน</td>
-//                 <td>${reportData.totalAmount.toLocaleString() || 0}</td>
-//                       <td>[ ] ครบถ้วนถูกต้อง</td>
-//             </tr>
-//             <tr>
-//                 <td>รวมบัตร(ใบ)</td>
-//                 <td>${reportData.totalTicketsCount || 0}</td>
-//                              <td>[ ] ไม่ถูกต้อง</td>
-//             </tr>
-
-//         </tbody>
-//     </table>
-// </div>
-
-//                         <hr />
-//                         <p>${reportData.manage_name}</p>
-//                         <p>(ผู้ตรวจสอบเงินสด)</p>
-//                     </div>
-//                 </div>`
-//         });
-
+        const raw = JSON.stringify({ user, machine });
         const requestOptions = {
             method: "POST",
             headers: myHeaders,
@@ -299,8 +124,8 @@ const Ticket_sales_report = () => {
             redirect: "follow"
         };
 
-        fetch(`${API_ENDPOINT}/api/v1/zoo/pos/print_summary_date`, requestOptions)
-            .then((response) => {
+        fetch(`${API_ENDPOINT}/api/v1/zoo/pos/summary_date`, requestOptions)
+            .then(response => {
                 if (response.status === 401) {
                     // แจ้งเตือนให้ผู้ใช้ล็อกเอาท์เมื่อได้รับสถานะ 401
                     Swal.fire({
@@ -317,16 +142,175 @@ const Ticket_sales_report = () => {
                 }
                 return response.json();
             })
-            .then((result) => {
-                console.log(result.printder.id);
+            .then(result => {
+                console.log(result.id);
                 if (result.status === "success") {
                     setCanPrint(true); // แสดงปุ่มพิมพ์เมื่อสถานะเป็น success
-                    setIdprint(result.printder.id);
-                } else {
-                    setCanPrint(false); // ซ่อนปุ่มพิมพ์เมื่อสถานะไม่เป็น success
+                    setID(result.id)
                 }
+                else {
+                    setCanPrint(false); // ซ้อนปุ่มพิมพ์เมื่อสถานะไม่เป็น success
+                    alert("ไม่สามารถสร้างรายงานได้");
+                }
+                // setLoading(false);
             })
-            .catch((error) => console.error(error));
+            .catch(error => {
+                setError(error);
+                setLoading(false);
+            });
+
+        // สำรองการใช้งาน
+        // const myHeaders = new Headers();
+        // myHeaders.append("Content-Type", "application/json");
+        // myHeaders.append("X-API-KEY", token);
+
+
+        // // ตรวจสอบว่ามีข้อมูลใน reportData หรือไม่
+        // if (!reportData) {
+        //     console.error("reportData is not available");
+        //     return;
+        // }
+
+        // const formattedDate = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+        // const formattedTime = new Date().toLocaleTimeString('th-TH');
+        // const raw = JSON.stringify({
+        //     "html_content": `
+        //         <div class="receiptSumAll">
+        //             <table width="100%">
+        //                 <tbody>
+        //                     <tr align="center">
+        //                         <td><b>รายงานยอดจำหน่ายบัตร</b></td>
+        //                     </tr>
+        //                     <tr align="center">
+        //                         <td>${reportData.machine.zoo.name || 'ไม่ระบุ'}</td>
+        //                     </tr>
+        //                     <tr align="center">
+        //                         <td>ประจำวันที่ ${formattedDate}</td>
+        //                     </tr>
+        //                     <tr align="center">
+        //                         <td>รหัสเครื่อง POS: ${reportData.machine.name || 'ไม่ระบุ'}-${reportData.machine.code || 'ไม่ระบุ'}${reportData.machine.number || 'ไม่ระบุ'}</td>
+        //                     </tr>
+        //                     <tr align="center">
+        //                         <td>ชื่อพนักงาน: ${reportData.user_profile.first_name} ${reportData.user_profile.last_name}</td>
+        //                     </tr>
+        //                     <tr align="center">
+        //                         <td>เวลาทำรายการ: ${formattedTime}</td>
+        //                     </tr>
+        //                 </tbody>
+        //             </table>
+        //             <b>--------------------------------------------------------------</b><br>
+
+        //             <table>
+        //                 <tbody>
+        //                     <tr>
+        //                         <td><b>ประเภทบัตร</b></td>
+        //                         <td align="right"><b>ยอดขาย</b></td>
+        //                     </tr>
+        //                 </tbody>
+        //                 <tbody>
+        //                     ${Object.keys(reportData.result).map((key) => {
+        //                         const item = reportData.result[key];
+        //                         const objType = item.obj_type;
+        //                         return `
+        //                             <tr>
+        //                                 <td align="left">${objType ? objType.name : 'ไม่ระบุ'}</td>
+        //                                 <td align="right"><b>${(item.sum || 0).toLocaleString()}</b></td>
+        //                             </tr>`;
+        //                     }).join('')}
+        //                 </tbody>
+        //             </table>
+        //             <br> <b>--------------------------------------------------------------</b><br>
+
+        //             <table class="table">
+        //                 <tbody>
+        //                     <tr>
+        //                         <td><b>ประเภทรายรับ</b></td>
+        //                         <td align="right"><b>ยอดขาย</b></td>
+        //                     </tr>
+        //                 </tbody>
+        //                 <tbody>
+        //                     <tr><td align="left">รับเงินโอนผ่าน QR CODE</td><td align="right"><b>${(reportData.paymentMethodSum.qrcode || 0).toLocaleString()}</b></td></tr>
+        //                     <tr><td align="left">รับเงินสด</td><td align="right"><b>${(reportData.paymentMethodSum.cash - reportData.dealer || 0).toLocaleString()}</b></td></tr>
+        //                     <tr><td align="left">บัตรเครดิต</td><td align="right"><b>${(reportData.paymentMethodSum.credit_card || 0).toLocaleString()}</b></td></tr>
+        //                     <tr><td align="left">ขายเชื่อ</td><td align="right"><b>${(reportData.paymentMethodSum.credit || 0).toLocaleString()}</b></td></tr>
+        //                 </tbody>
+        //             </table>
+        //             <br> <b>--------------------------------------------------------------</b><br>
+
+        //             <table class="table">
+        //                 <tbody>
+        //                     <tr>
+        //                         <td><b>รวม</b></td>
+        //                         <td align="right"><b>ยอด</b></td>
+        //                     </tr>
+        //                 </tbody>
+        //                 <tbody>
+        //                     <tr>
+        //                         <td align="left">รวมเป็นเงิน</td>
+        //                         <td align="right"><b>${(reportData.totalAmount || 0).toLocaleString()}</b></td>
+        //                     </tr>
+        //                     <tr>
+        //                         <td align="left">รวมบัตร(ใบ)</td>
+        //                         <td align="right"><b>${reportData.totalTicketsCount || 0}</b></td>
+        //                     </tr>
+        //                 </tbody>
+        //             </table>
+        //             <br> <b>--------------------------------------------------------------</b><br>
+
+        //             <b style="font-size:1.2em;">[ ]</b> ครบถ้วนถูกต้อง <br>
+        //             <b style="font-size:1.2em;">[ ]</b> ไม่ถูกต้อง <br>
+        //             <b>--------------------------------------------------------------</b><br>
+
+        //             <table>
+        //                 <tbody>
+        //                     <tr align="center">
+        //                         <td><br><b>----------------------------</b> <br><br>
+        //                             ${reportData.manage_name || ''}<br>
+        //                             (ผู้ตรวจสอบเงินสด)
+        //                         </td>
+        //                     </tr>
+        //                 </tbody>
+        //             </table>
+        //         </div>`
+        // });
+
+
+
+        // const requestOptions = {
+        //     method: "POST",
+        //     headers: myHeaders,
+        //     body: raw,
+        //     redirect: "follow"
+        // };
+
+        // fetch(`${API_ENDPOINT}/api/v1/zoo/pos/print_summary_date`, requestOptions)
+        //     .then((response) => {
+        //         if (response.status === 401) {
+        //             // แจ้งเตือนให้ผู้ใช้ล็อกเอาท์เมื่อได้รับสถานะ 401
+        //             Swal.fire({
+        //                 title: 'Token หมดอายุ',
+        //                 text: 'กรุณาเข้าสู่ระบบใหม่',
+        //                 icon: 'warning',
+        //                 confirmButtonText: 'ล็อกเอาท์',
+        //             }).then((result) => {
+        //                 if (result.isConfirmed) {
+        //                     handleLogout();
+        //                 }
+        //             });
+        //             throw new Error('Unauthorized');
+        //         }
+        //         return response.json();
+        //     })
+        //     .then((result) => {
+        //         console.log(result.printder.id);
+        //         if (result.status === "success") {
+        //             setCanPrint(true); // แสดงปุ่มพิมพ์เมื่อสถานะเป็น success
+        //             setIdprint(result.printder.id);
+        //         } else {
+        //             setCanPrint(false); // ซ่อนปุ่มพิมพ์เมื่อสถานะไม่เป็น success
+        //         }
+        //     })
+        //     .catch((error) => console.error(error));
     };
 
 
@@ -433,9 +417,9 @@ const Ticket_sales_report = () => {
                         <p>(ผู้ตรวจสอบเงินสด)</p>
                     </div>
                     <div className='col-md-6'><div class="dropdown">
-
+                        {/* idprint */}
                         <button className="btn btn-secondary dropdown-toggle" type="button" onClick={Print_sum_date} >สร้างรายงาน</button>
-                        {canPrint && <button className="btn btn-secondary dropdown-toggle" type="button" onClick={() => Printder(idprint)}>พิมพ์รายงาน</button>}
+                        {canPrint && <button className="btn btn-secondary dropdown-toggle" type="button" onClick={() => Printder(setid)}>พิมพ์รายงาน</button>}
                     </div></div>
                 </div>
             </div>

@@ -51,7 +51,7 @@ function DetailOrder() {
     const machine = localStorage.getItem('machine');
     const handleLogout = () => {
         localStorage.clear();
-        window.location.href = '/posa/login';
+        window.location.href = '/pose/login';
     };
     useEffect(() => {
         const myHeaders = new Headers();
@@ -101,24 +101,60 @@ function DetailOrder() {
 
     const Printder = (id, role) => {
         const newAttempt = printAttempts + 1;
-        const printUrl = `http://localhost/pos_client_print/${role}.php?id=${id}&r=${newAttempt}&ep=${PRINTER_ENDPOINT}`;
-        Reprint("reprint order: " + id, id);
-        window.open(printUrl, '_blank', 'width=600,height=400');
+        const requestOptions = {
+            method: "GET",
+            redirect: "follow"
+          };
+          
+          fetch(`http://127.0.0.1:5000/ticket/${PRINTER_ENDPOINT}/order/${id}/${newAttempt}/${role}`, requestOptions)
+            .then((response) => response.json())
+            .then((result) => {
+                console.log(result);
+                if (result.status === "success") {
+                    Reprint("reprint order: " + id, id);
+                    alert(`ข้อมูลส่งเรียบร้อยแล้ว กรุณารอ หรือกดปุ่ม ลองอีกครั้ง. จำนวนพิมพ์ซ้ำ (${newAttempt})`);
+                } else {
+                    alert("พิมพ์ตั๋วไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+                }
+            })
+            .catch((error) => console.error(error));
+     
+        // const printUrl = `http://localhost/pos_client_print/${role}.php?id=${id}&r=${newAttempt}&ep=${PRINTER_ENDPOINT}`;
+        // Reprint("reprint order: " + id, id);
+        // window.open(printUrl, '_blank', 'width=600,height=400');
 
 
         setPrintAttempts(newAttempt);
 
 
-        alert(`ข้อมูลส่งเรียบร้อยแล้ว กรุณารอ หรือกดปุ่ม ลองอีกครั้ง. จำนวนพิมพ์ซ้ำ (${newAttempt})`);
+       
     };
 
     const Printder_tid = (id, tid, role) => {
         const newAttempt = printAttempts + 1;
-        const printUrl = `http://localhost/pos_client_print/${role}.php?id=${id}&tid=${tid}&r=${newAttempt}&ep=${PRINTER_ENDPOINT}`;
+        const requestOptions = {
+            method: "GET",
+            redirect: "follow"
+          };
+          
+          fetch(`http://127.0.0.1:5000/ticket_id/${PRINTER_ENDPOINT}/order/${id}/${tid}/${newAttempt}`, requestOptions)
+            .then((response) => response.json())
+            .then((result) => {
+                console.log(result);
+                if (result.status === "success") {
+                    Reprint("reprint ticket: " + tid + " (order_id: " + id + ")", id);
+                    // alert(`ข้อมูลส่งเรียบร้อยแล้ว กรุณารอ หรือกดปุ่ม ลองอีกครั้ง. จำนวนพิมพ์ซ้ำ (${newAttempt})`);
+                } else {
+                    alert("พิมพ์ตั๋วไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+                }
+            })
+            .catch((error) => console.error(error));
 
-        Reprint("reprint ticket: " + tid + " (order_id: " + id + ")", id);
+        // const printUrl = `http://localhost/pos_client_print/${role}.php?id=${id}&tid=${tid}&r=${newAttempt}&ep=${PRINTER_ENDPOINT}`;
 
-        window.open(printUrl, '_blank', 'width=600,height=400');
+        // Reprint("reprint ticket: " + tid + " (order_id: " + id + ")", id);
+
+        // window.open(printUrl, '_blank', 'width=600,height=400');
 
 
         setPrintAttempts(newAttempt);
@@ -280,14 +316,14 @@ function DetailOrder() {
                         <button
                             type="button"
                             className="btn btn-primary p-2 px-3 fw-bold"
-                            onClick={() => Printder(order.id, 'index')}
+                            onClick={() => Printder(order.id, 'single')}
                         >
                             พิมพ์ตั๋วทั้งหมดในรายการ
                         </button>
                         <button
                             type="button"
                             className="btn btn-info p-2 px-3 fw-bold ms-1"
-                            onClick={() => Printder(order.id, 'print_group')}
+                            onClick={() => Printder(order.id, 'group')}
                         >
                             พิมพ์ตั๋วกลุ่ม
                         </button>

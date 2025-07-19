@@ -42,6 +42,7 @@ function Login() {
   const get_mac = async () => {
     
     try {
+      // const response_mac = await fetch("http://localhost:8080/pos_client_print/get_mac.php");
       const response_mac = await fetch("http://localhost/pos_client_print/get_mac.php");
       
       // Check if response is OK
@@ -69,7 +70,7 @@ function Login() {
                 <div className="row">
                   <div className="col-12">
                     <div className="mb-5">
-                      <h3>ZOO E-Ticket (POSA) </h3>
+                      <h3>ZOO E-Ticket (pose) </h3>
                     </div>
                   </div>
                 </div>
