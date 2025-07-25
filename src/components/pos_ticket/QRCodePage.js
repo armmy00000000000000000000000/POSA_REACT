@@ -36,6 +36,7 @@ function QRCodePage() {
     const navigate = useNavigate();
     const parsedUser = JSON.parse(user); // แปลง JSON เป็น Object
     const empCode = parsedUser.user_profile.emp_code; // ดึง emp_code
+    const machine = localStorage.getItem('machine');
     let timer;
     useEffect(() => {
         let timer;
@@ -162,6 +163,7 @@ function QRCodePage() {
         const raw = JSON.stringify({
             "ref1": ref1,
             "ref2": ref2,
+            "machine": JSON.parse(machine),
             "emp_code": empCode
         });
 
@@ -670,7 +672,7 @@ function QRCodePage() {
                             </div>
                         ) : (
                             <>
-                                <div className="card">
+                                {/* <div className="card">
                                     <div className="row">
                                         <div className="col-12 mb-3">
                                             <div className="mt-3 alert alert-info p-2 rounded-3">
@@ -698,9 +700,8 @@ function QRCodePage() {
                                             </div>
                                         </div>
                                     </div>
+                                </div> */}
 
-
-                                </div>
                                 <div className='mt-3'></div>
                                 <div className="col-6">
                                     <button
