@@ -26,12 +26,31 @@ function PosTicket() {
     const [paymentMethod, setPaymentMethod] = useState('cash'); // Default value
     const user = localStorage.getItem('user');
     const machine = localStorage.getItem('machine');
+
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [activeInputIndex, setActiveInputIndex] = useState(null);
+    const [tempInput, setTempInput] = useState(''); // ค่า input ชั่วคราว
+    const [tempTicket, setTempTicket] = useState(null);
+    const [carPosts, setCarPosts] = useState({}); // { ticketId: [ทะเบียน1, ทะเบียน2, ...] }
+
     // สร้างอ็อบเจ็กต์สำหรับจับคู่ชื่อไฟล์กับอิมเมจที่นำเข้า
     const ticketImages = {
         'car.png': car,
         'bus.png': bus,
         'moto.png': moto,
     };
+    // สร้างปุ่มสำหรับคีย์ทะเบียนรถ
+    const keypadButtons2 = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '←', 'C'];
+    const handleKeypadClick2 = (value) => {
+        if (value === 'C') {
+            setTempInput('');
+        } else if (value === '←') {
+            setTempInput(tempInput.slice(0, -1));
+        } else {
+            setTempInput(tempInput + value);
+        }
+    };
+
     const handlePaymentChange = (event) => {
         setPaymentMethod(event.target.value);
         console.log(event.target.value)
@@ -101,7 +120,8 @@ function PosTicket() {
             setSelectedTickets([...selectedTickets, {
                 ...ticket,
                 input_val: 1,
-                total_amount: ticket.price
+                total_amount: ticket.price,
+                type_car: ticket.group // เพิ่ม type เพื่อระบุว่าเป็นตั๋ว
             }]);
         }
     };
@@ -137,16 +157,32 @@ function PosTicket() {
 
 
     const createTicketSummary = () => {
-        const data = selectedTickets.map(ticket => ({
-            name: ticket.name,
-            elid: `ticket_${ticket.id}`,
-            amount: ticket.price,
-            xid: ticket.id,
-            input_val: ticket.input_val,
-            total_amount: ticket.total_amount,
-            ais_code_storage: [],
-            car_post_storage: []
-        }));
+        // const data = selectedTickets.map(ticket => ({
+
+        //     name: ticket.name,
+        //     elid: `ticket_${ticket.id}`,
+        //     amount: ticket.price,
+        //     xid: ticket.id,
+        //     input_val: ticket.input_val,
+        //     total_amount: ticket.total_amount,
+        //     ais_code_storage: [],
+        //     car_post_storage: [],
+        //     type_car: ticket.type_car
+        // }));
+        const data = selectedTickets.map(ticket => {
+            return {
+                name: ticket.name,
+                elid: `ticket_${ticket.id}`,
+                amount: ticket.price,
+                xid: ticket.id,
+                input_val: ticket.input_val,
+                total_amount: ticket.total_amount,
+                ais_code_storage: [],
+                car_post_storage: ticket.type_car === 'car' ? (carPosts[ticket.id] || []) : [],
+                type_car: ticket.type_car,
+            };
+        });
+
 
         const totalAmount = selectedTickets.reduce((sum, ticket) => sum + ticket.total_amount, 0);
 
@@ -389,11 +425,23 @@ function PosTicket() {
                                         data-price={t.price}
                                         data-type="ticket"
                                         onClick={() => {
-                                            // กดได้ถ้า tk_limit เป็น null หรือ tk_limit - tk_count มากกว่า 0
                                             if (t.tk_limit === null || (t.tk_limit - t.tk_count) > 0) {
-                                                handleTicketSelection(t);
+                                                setTempTicket(t); // เก็บบัตรชั่วคราว
+                                                setActiveInputIndex(index);
+                                                // setTempInput(ticket.car_post_storage?.[0] || '');
+                                                setKeyboardVisible(true); // แสดงช่องกรอกทะเบียน
                                             }
                                         }}
+
+                                        // onClick={() => {
+                                        //     // กดได้ถ้า tk_limit เป็น null หรือ tk_limit - tk_count มากกว่า 0
+                                        //     if (t.tk_limit === null || (t.tk_limit - t.tk_count) > 0) {
+                                        //         handleTicketSelection(t);
+                                        //                setActiveInputIndex(index);
+                                        //                         setTempInput(ticket.car_post_storage?.[0] || '');
+                                        //                         setKeyboardVisible(true);
+                                        //     }
+                                        // }}
                                         style={{ display: 'flex', alignItems: 'center', padding: '5px' }}
                                     >
                                         <span className="info-box-icon" style={{ marginRight: '5px' }}>
@@ -455,7 +503,14 @@ function PosTicket() {
                                 <tbody>
                                     {selectedTickets.map(ticket => (
                                         <tr key={ticket.id}>
-                                            <td>{ticket.name}</td>
+                                            <td>
+                                                {ticket.name}
+                                                {ticket.group === 'car' && carPosts[ticket.id]?.map((plate, i) => (
+                                                    <div key={i}>({plate})</div>
+                                                ))}
+                                            </td>
+
+
                                             <td>
                                                 <div className="d-flex align-items-center">
                                                     <button
@@ -551,6 +606,94 @@ function PosTicket() {
                     </button>
                 </div>
             </div>
+
+
+            {keyboardVisible && (
+                <div
+                    className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}
+                >
+                    <div className="bg-white p-4 rounded shadow-lg" style={{ width: '320px' }}>
+                        {/* หัวข้อ */}
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h5 className="mb-0">
+                                <span className="me-2">🔠</span>กรอกทะเบียนรถ
+                            </h5>
+                            <button className="btn btn-sm btn-outline-secondary" onClick={() => setKeyboardVisible(false)}>✕</button>
+                        </div>
+
+                        {/* กล่องแสดงค่า */}
+                        <input
+                            type="text"
+                            className="form-control mb-3 text-center fs-5"
+                            value={tempInput}
+                            readOnly
+                        />
+
+                        <div className="row g-2">
+                            {keypadButtons2.map((btn, key) => (
+                                <div className="col-4" key={key}>
+                                    <button
+                                        className="btn btn-outline-primary w-100"
+                                        onClick={() => handleKeypadClick2(btn)}
+                                    >
+                                        {btn}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+
+
+
+
+                        {/* ปุ่มยืนยัน */}
+                        <div className="mt-3">
+                            <button
+                                className="btn btn-success w-100"
+                                onClick={() => {
+                                    if (tempTicket && tempInput) {
+                                        const currentPosts = carPosts[tempTicket.id] || [];
+
+                                        // ถ้ายังมีจำนวน input_val ไม่ถึง limit → เพิ่มทะเบียนใหม่
+                                        if (currentPosts.length < (selectedTickets.find(t => t.id === tempTicket.id)?.input_val || 0) + 1) {
+                                            const updatedCarPosts = {
+                                                ...carPosts,
+                                                [tempTicket.id]: [...currentPosts, tempInput],
+                                            };
+                                            setCarPosts(updatedCarPosts);
+                                        }
+
+                                        handleTicketSelection(tempTicket); // เพิ่มบัตร
+                                        setTempTicket(null);
+                                        setTempInput('');
+                                        setKeyboardVisible(false);
+                                    }
+                                }}
+                            >
+                                ✅ ตกลง
+                            </button>
+
+                            {/* <button
+                                className="btn btn-success w-100"
+                                onClick={() => {
+
+
+
+                                    if (tempTicket) {
+                                        handleTicketSelection(tempTicket); // เรียกเพิ่มบัตร หลังจากกรอกทะเบียน
+                                        setTempTicket(null); // เคลียร์ temp
+                                    }
+
+                                    setKeyboardVisible(false); // ปิดคีย์บอร์ด
+                                }}
+                            >
+                                ✅ ตกลง
+                            </button> */}
+
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

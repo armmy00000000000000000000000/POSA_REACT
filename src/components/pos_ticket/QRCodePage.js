@@ -6,8 +6,13 @@ import { API_ENDPOINT, PRINTER_ENDPOINT } from '../config/config';
 import Swal from 'sweetalert2';
 import redcard from '../image/redcard.gif';
 function QRCodePage() {
+    // const location = useLocation();
+    // const { ticketSummary } = location.state || {};
     const location = useLocation();
-    const { ticketSummary } = location.state || {};
+    const [ticketSummary, setTicketSummary] = useState(location.state?.ticketSummary || null);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [activeInputIndex, setActiveInputIndex] = useState(null);
+    const [tempInput, setTempInput] = useState(''); // ค่า input ชั่วคราว
     const [odid, setOdid] = useState(null);
     const [odderid, setOdderid] = useState('');
     const [Ioall, setIoall] = useState('');
@@ -37,6 +42,9 @@ function QRCodePage() {
     const parsedUser = JSON.parse(user); // แปลง JSON เป็น Object
     const empCode = parsedUser.user_profile.emp_code; // ดึง emp_code
     const machine = localStorage.getItem('machine');
+    const [activePlateIndex, setActivePlateIndex] = useState(null);       // index หลัก: ตั๋วใดใน data
+    const [activePlateSubIndex, setActivePlateSubIndex] = useState(null);  // index เสริม: ทะเบียนตัวที่เท่าไหร่
+
     let timer;
     useEffect(() => {
         let timer;
@@ -50,6 +58,18 @@ function QRCodePage() {
         }
         return () => clearInterval(timer);
     }, [countdown, isDisabled]);
+
+    const keypadButtons2 = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '←', 'C'];
+
+    const handleKeypadClick2 = (value) => {
+        if (value === 'C') {
+            setTempInput('');
+        } else if (value === '←') {
+            setTempInput(tempInput.slice(0, -1));
+        } else {
+            setTempInput(tempInput + value);
+        }
+    };
     const handleCheckboxChange = (e) => {
         setGate(e.target.checked ? 1 : 0);
     };
@@ -559,42 +579,131 @@ function QRCodePage() {
                                 year: 'numeric', month: 'long', day: 'numeric'
                             })}</small>
                         </div>
+
                         {ticketSummary ? (
                             <div className="card-body">
-                                <h5 className="text-muted mb-3">รายการคำสั่งซื้อ: <b>{odderid || ''}</b></h5>
-                                <div className="table-responsive">
-                                    <table className="table table-hover align-middle">
-                                        <thead className="table-light">
-                                            <tr>
-                                                <th>รายการ</th>
-                                                <th>ราคา</th>
-                                                <th>จำนวน</th>
-                                                <th>ราคารวม</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {ticketSummary.data.map(ticket => (
-                                                <tr key={ticket.elid}>
-                                                    <td>{ticket.name}</td>
-                                                    <td>{ticket.amount} บาท</td>
-                                                    <td>{ticket.input_val}</td>
-                                                    <td className="fw-bold">{ticket.total_amount} บาท</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <h5 className="mb-3 text-secondary">
+                                    🧾 รายการคำสั่งซื้อ: {odid || ''}
+                                </h5>
+                                <table className="table table-bordered table-striped table-hover">
+                                    <thead className="table-light text-center">
+                                        <tr>
+                                            <th>รายการ</th>
+                                            <th>ราคา</th>
+                                            <th>จำนวน</th>
+                                            <th>ราคารวม</th>
+                                            <th>ทะเบียนรถ</th> {/* เพิ่มคอลัมน์ใหม่ */}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {ticketSummary.data.map((ticket, index) => (
+                                            <tr key={ticket.elid}>
+                                                <td>{ticket.name}</td>
+                                                <td>{ticket.amount} บาท</td>
+                                                <td>{ticket.input_val}</td>
+                                                <td>{ticket.total_amount} บาท</td>
+                                                <td>
+                                                    {ticket.type_car === 'car' ? (
+                                                        (ticket.car_post_storage || []).map((plate, subIdx) => (
+                                                            <input
+                                                                key={subIdx}
+                                                                type="text"
+                                                                className="form-control mb-1"
+                                                                placeholder={`ทะเบียนรถ ${subIdx + 1}`}
+                                                                value={plate}
+                                                                readOnly
+                                                                onClick={() => {
+                                                                    setActiveInputIndex(index);
+                                                                    setActivePlateIndex(index);          // ของแถวนี้
+                                                                    setActivePlateSubIndex(subIdx);      // ของทะเบียนตัวที่ subIdx
+                                                                    setTempInput(plate);
+                                                                    setKeyboardVisible(true);
+                                                                }}
+                                                            />
+                                                        ))
+                                                    ) : (
+                                                        '-'
+                                                    )}
+                                                </td>
+                                                {/* <td>
+                                                    {ticket.type_car === "car" ? (
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            placeholder="กรอกทะเบียนรถ"
+                                                            value={ticket.car_post_storage?.[0] || ""}
+                                                            readOnly
+                                                            onClick={() => {
+                                                                setActiveInputIndex(index);
+                                                                setTempInput(ticket.car_post_storage?.[0] || '');
+                                                                setKeyboardVisible(true);
+                                                            }}
+                                                        />
 
-                                <div className="mt-4 border-top pt-3 text-end">
-                                    <p className="mb-1">รวมรายการตั๋ว: <b>{ticketSummary.data.reduce((sum, ticket) => sum + Number(ticket.input_val), 0)} ใบ</b></p>
-                                    <h5 className="text-success">ยอดรวม: {ticketSummary.amount} บาท</h5>
+
+                                                    ) : (
+                                                        "-"
+                                                    )}
+                                                </td> */}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                <div className="mt-3 text-end">
+                                    <p className="mb-1">
+                                        🧾 รวมรายการตั๋ว:{' '}
+                                        <strong>
+                                            {ticketSummary.data.reduce(
+                                                (sum, ticket) => sum + Number(ticket.input_val),
+                                                0
+                                            )}
+                                        </strong>{' '}
+                                        ใบ
+                                    </p>
+                                    <p className="mb-0">
+                                        💰 ยอดรวม: <strong>{ticketSummary.amount}</strong> บาท
+                                    </p>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="card-body">
-                                <p className="text-muted">ไม่มีข้อมูลสรุปรายการตั๋ว</p>
-                            </div>
-                        )}
+                        )
+                            /* {ticketSummary ? (
+                                <div className="card-body">
+                                    <h5 className="text-muted mb-3">รายการคำสั่งซื้อ: <b>{odderid || ''}</b></h5>
+                                    <div className="table-responsive">
+                                        <table className="table table-hover align-middle">
+                                            <thead className="table-light">
+                                                <tr>
+                                                    <th>รายการ</th>
+                                                    <th>ราคา</th>
+                                                    <th>จำนวน</th>
+                                                    <th>ราคารวม</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {ticketSummary.data.map(ticket => (
+                                                    <tr key={ticket.elid}>
+                                                        <td>{ticket.name}</td>
+                                                        <td>{ticket.amount} บาท</td>
+                                                        <td>{ticket.input_val}</td>
+                                                        <td className="fw-bold">{ticket.total_amount} บาท</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+    
+                                    <div className="mt-4 border-top pt-3 text-end">
+                                        <p className="mb-1">รวมรายการตั๋ว: <b>{ticketSummary.data.reduce((sum, ticket) => sum + Number(ticket.input_val), 0)} ใบ</b></p>
+                                        <h5 className="text-success">ยอดรวม: {ticketSummary.amount} บาท</h5>
+                                    </div>
+                                </div>
+                            )  */
+                            : (
+                                <div className="card-body">
+                                    <p className="text-muted">ไม่มีข้อมูลสรุปรายการตั๋ว</p>
+                                </div>
+                            )}
                     </div>
 
                     {/* Order Details */}
@@ -735,6 +844,76 @@ function QRCodePage() {
                     </div>
                 </div>
             </div>
+
+
+
+            {keyboardVisible && (
+                <div
+                    className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 9999 }}
+                >
+                    <div className="bg-white p-4 rounded shadow-lg" style={{ width: '320px' }}>
+                        {/* หัวข้อ */}
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <h5 className="mb-0">
+                                <span className="me-2">🔠</span>กรอกทะเบียนรถ
+                            </h5>
+                            <button className="btn btn-sm btn-outline-secondary" onClick={() => setKeyboardVisible(false)}>✕</button>
+                        </div>
+
+                        {/* กล่องแสดงค่า */}
+                        <input
+                            type="text"
+                            className="form-control mb-3 text-center fs-5"
+                            value={tempInput}
+                            readOnly
+                        />
+
+                        <div className="row g-2">
+                            {keypadButtons2.map((btn, key) => (
+                                <div className="col-4" key={key}>
+                                    <button
+                                        className="btn btn-outline-primary w-100"
+                                        onClick={() => handleKeypadClick2(btn)}
+                                    >
+                                        {btn}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+
+
+
+
+                        {/* ปุ่มยืนยัน */}
+                        <div className="mt-3">
+                            <button
+                                className="btn btn-success w-100"
+                                onClick={() => {
+                                    const updatedData = [...ticketSummary.data];
+                                    const target = updatedData[activeInputIndex];
+
+                                    // ถ้าไม่มี array สร้างใหม่ ตาม input_val
+                                    if (!Array.isArray(target.car_post_storage)) {
+                                        target.car_post_storage = Array(target.input_val).fill('');
+                                    }
+
+                                    // กรอกเฉพาะตำแหน่งที่แก้ไข
+                                    target.car_post_storage[activePlateSubIndex] = tempInput;
+
+                                    setTicketSummary({ ...ticketSummary, data: updatedData });
+                                    setKeyboardVisible(false);
+                                    setTempInput('');
+
+                                }}
+                            >
+                                ✅ ตกลง
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 
